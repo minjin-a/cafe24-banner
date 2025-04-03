@@ -83,6 +83,12 @@
           .then((settings) => {
             log("설정 파일 로드 성공: 버전 " + settings.version)
   
+            // 버전 확인 - 설정 파일의 버전과 요청한 버전이 일치하는지 확인
+            if (settings.version.toString() !== version.toString()) {
+              log(`버전 불일치: 요청=${version}, 받음=${settings.version}. 버전 수정 중...`)
+              settings.version = version
+            }
+  
             // 로컬 스토리지에 현재 버전 저장
             try {
               localStorage.setItem("cafe24_banner_version", version)
@@ -217,7 +223,14 @@
           log("최초 로드 - 최신 버전: " + latestVersion + ", 저장된 버전: " + savedVersion)
   
           // 항상 최신 버전의 설정을 로드하고 적용
-          return loadSettings(latestVersion)
+          return loadSettings(latestVersion).then((settings) => {
+            // 버전 확인 - 설정 파일의 버전과 최신 버전이 일치하는지 확인
+            if (settings.version.toString() !== latestVersion.toString()) {
+              log(`버전 불일치: 최신=${latestVersion}, 받음=${settings.version}. 버전 수정 중...`)
+              settings.version = latestVersion
+            }
+            return settings
+          })
         })
         .then((settings) => {
           renderBanner(settings)
@@ -244,7 +257,7 @@
           renderErrorBanner("배너를 로드할 수 없습니다: " + error.message)
         })
   
-      // 5초마다 버전 확인 (테스트용으로 짧게 설정)
+      // 3초마다 버전 확인 (테스트용으로 짧게 설정)
       setInterval(() => {
         log("주기적 버전 확인 시작")
   
@@ -271,7 +284,7 @@
           .catch((error) => {
             log("주기적 버전 확인 오류: " + error.message)
           })
-      }, 5000) // 5초마다 확인 (테스트용)
+      }, 3000) // 3초마다 확인 (테스트용)
     }
   
     // 메인 함수
