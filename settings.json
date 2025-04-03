@@ -1,0 +1,13 @@
+{
+    "title": "\ud2b9\ubcc4 \uc774\ubca4\ud2b8 \uc9c4\ud589 \uc911!",
+    "message": "\uc9c0\uae08 \uad6c\ub9e4\ud558\uc2dc\uba74 30% \ud560\uc778 \ud61c\ud0dd\uc744 \ub4dc\ub9bd\ub2c8\ub2e4. \uc774 \uae30\ud68c\ub97c \ub193\uce58\uc9c0 \ub9c8\uc138\uc694!",
+    "backgroundColor": "#4a90e2",
+    "textColor": "#ffffff",
+    "showButton": true,
+    "buttonText": "\uc9c0\uae08 \uad6c\ub9e4\ud558\uae30",
+    "buttonColor": "#ff6b6b",
+    "buttonLink": "https:\/\/example.com\/event",
+    "active": true,
+    "version": 1743666580,
+    "lastUpdated": "2025-04-03T16:49:40+09:00"
+}
