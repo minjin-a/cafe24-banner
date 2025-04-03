@@ -44,15 +44,8 @@
   
         log("버전 확인 중: " + versionUrl)
   
-        fetch(versionUrl, {
-          method: "GET",
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-          cache: "no-store",
-        })
+        // CORS 오류를 방지하기 위해 커스텀 헤더 제거
+        fetch(versionUrl)
           .then((response) => {
             if (!response.ok) {
               throw new Error("버전 정보를 가져올 수 없습니다. 상태 코드: " + response.status)
@@ -81,15 +74,8 @@
       log("설정 URL: " + settingsUrl)
   
       return new Promise((resolve, reject) => {
-        fetch(settingsUrl, {
-          method: "GET",
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-          cache: "no-store",
-        })
+        // CORS 오류를 방지하기 위해 커스텀 헤더 제거
+        fetch(settingsUrl)
           .then((response) => {
             if (!response.ok) {
               throw new Error("설정 파일을 로드할 수 없습니다. 상태 코드: " + response.status)
