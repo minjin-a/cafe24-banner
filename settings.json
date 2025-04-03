@@ -1,13 +1,13 @@
 {
-    "title": "\ud2b9\ubcc4 \uc774\ubca4\ud2b8 \uc9c4\ud589 \uc911!",
-    "message": "\uc9c0adasdasdasdasdasd",
+    "title": "특별 이벤트 진행 중!",
+    "message": "지adasdasdasdasdasd",
     "backgroundColor": "#e24b4b",
     "textColor": "#ffffff",
     "showButton": true,
-    "buttonText": "\uc9c0\uae08 \uad6c\ub9e4\ud558\uae30",
+    "buttonText": "지금 구매하기",
     "buttonColor": "#ff6b6b",
     "buttonLink": "https:\/\/example.com\/event",
     "active": true,
-    "version": 1743666642,
-    "lastUpdated": "2025-04-03T16:50:42+09:00"
+    "version": 1743667303,
+    "lastUpdated": "2025-04-03T17:01:43+09:00"
 }
