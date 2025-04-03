@@ -35,27 +35,32 @@
       return container
     }
   
+    // 기본 설정값
+    const defaultSettings = {
+      version: "1.0.0",
+      lastUpdated: new Date().toISOString(),
+      title: "특별 이벤트 진행 중!",
+      message: "지금 구매하시면 30% 할인 혜택을 드립니다. 이 기회를 놓치지 마세요!",
+      backgroundColor: "#4a90e2",
+      textColor: "#ffffff",
+      showButton: true,
+      buttonText: "지금 구매하기",
+      buttonColor: "#ff6b6b",
+      buttonLink: "https://example.com/event",
+      active: true,
+    }
+  
     // 최신 버전 확인 - 캐시 무시 강화
     function checkLatestVersion() {
       return new Promise((resolve, reject) => {
         // 캐시를 완전히 방지하기 위한 타임스탬프 추가
         const timestamp = new Date().getTime()
-        const versionUrl = `https://cdn.jsdelivr.net/gh/minjin-a/cafe24-banner@main/version.json?_=${timestamp}&nocache=${Math.random()}`
+        const versionUrl = `https://cdn.jsdelivr.net/gh/minjin-a/cafe24-banner@main/version.json?_=${timestamp}`
   
         log("버전 확인 중: " + versionUrl)
   
-        // 캐시 헤더 추가
-        const fetchOptions = {
-          method: "GET",
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-          cache: "no-store",
-        }
-  
-        fetch(versionUrl, fetchOptions)
+        // 기본 fetch 요청만 사용 (헤더 없음)
+        fetch(versionUrl)
           .then((response) => {
             if (!response.ok) {
               throw new Error("버전 정보를 가져올 수 없습니다. 상태 코드: " + response.status)
@@ -69,62 +74,21 @@
           .catch((error) => {
             log("버전 확인 오류: " + error.message)
   
-            // 오류 발생 시 GitHub API를 통해 직접 파일 목록 확인 시도
-            log("GitHub API를 통해 직접 파일 목록 확인 시도...")
-            findLatestVersionFromFileList()
-              .then((latestVersion) => {
-                log("GitHub API에서 찾은 최신 버전: " + latestVersion)
-                resolve(latestVersion)
-              })
-              .catch((githubError) => {
-                log("GitHub API 확인 오류: " + githubError.message)
-                reject(error) // 원래 오류 반환
-              })
-          })
-      })
-    }
-  
-    // GitHub API를 통해 직접 파일 목록에서 최신 버전 찾기
-    function findLatestVersionFromFileList() {
-      return new Promise((resolve, reject) => {
-        const timestamp = new Date().getTime()
-        const apiUrl = `https://api.github.com/repos/minjin-a/cafe24-banner/contents/?ref=main&_=${timestamp}&nocache=${Math.random()}`
-  
-        fetch(apiUrl)
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error("GitHub API 요청 실패: " + response.status)
-            }
-            return response.json()
-          })
-          .then((files) => {
-            // settings-*.json 파일 찾기
-            const settingsFiles = files.filter((file) => file.name.startsWith("settings-") && file.name.endsWith(".json"))
-  
-            if (settingsFiles.length === 0) {
-              throw new Error("설정 파일을 찾을 수 없습니다.")
+            // 오류 발생 시 로컬 스토리지에서 버전 확인
+            try {
+              const savedVersion = localStorage.getItem("cafe24_banner_version")
+              if (savedVersion) {
+                log("로컬 스토리지에서 버전 찾음: " + savedVersion)
+                resolve(savedVersion)
+                return
+              }
+            } catch (e) {
+              log("로컬 스토리지 접근 오류: " + e.message)
             }
   
-            // 파일명에서 버전 추출 및 정렬
-            const versions = settingsFiles
-              .map((file) => {
-                const match = file.name.match(/settings-(\d+)\.json/)
-                return match ? Number.parseInt(match[1], 10) : 0
-              })
-              .filter((version) => version > 0)
-  
-            // 버전 내림차순 정렬
-            versions.sort((a, b) => b - a)
-  
-            if (versions.length === 0) {
-              throw new Error("유효한 버전을 찾을 수 없습니다.")
-            }
-  
-            // 가장 높은 버전 반환
-            resolve(versions[0].toString())
-          })
-          .catch((error) => {
-            reject(error)
+            // 로컬 스토리지에도 없으면 기본 버전 사용
+            log("기본 버전 사용: " + defaultSettings.version)
+            resolve(defaultSettings.version)
           })
       })
     }
@@ -133,25 +97,33 @@
     function loadSettings(version) {
       log("설정 파일을 로드합니다... 버전: " + version)
   
-      // 버전이 지정된 설정 파일 URL
-      const timestamp = new Date().getTime()
-      const settingsUrl = `https://cdn.jsdelivr.net/gh/minjin-a/cafe24-banner@main/settings-${version}.json?_=${timestamp}&nocache=${Math.random()}`
-  
-      log("설정 URL: " + settingsUrl)
-  
-      // 캐시 헤더 추가
-      const fetchOptions = {
-        method: "GET",
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-        cache: "no-store",
-      }
-  
       return new Promise((resolve, reject) => {
-        fetch(settingsUrl, fetchOptions)
+        // 먼저 로컬 스토리지에서 설정 확인
+        try {
+          const savedSettings = localStorage.getItem("cafe24_banner_settings")
+          if (savedSettings) {
+            const settings = JSON.parse(savedSettings)
+            const savedVersion = localStorage.getItem("cafe24_banner_version")
+  
+            // 저장된 버전이 요청한 버전과 일치하면 사용
+            if (savedVersion === version.toString()) {
+              log("로컬 스토리지에서 설정 로드 성공: 버전 " + version)
+              resolve(settings)
+              return
+            }
+          }
+        } catch (e) {
+          log("로컬 스토리지 접근 오류: " + e.message)
+        }
+  
+        // 버전이 지정된 설정 파일 URL
+        const timestamp = new Date().getTime()
+        const settingsUrl = `https://cdn.jsdelivr.net/gh/minjin-a/cafe24-banner@main/settings-${version}.json?_=${timestamp}`
+  
+        log("설정 URL: " + settingsUrl)
+  
+        // 기본 fetch 요청만 사용 (헤더 없음)
+        fetch(settingsUrl)
           .then((response) => {
             if (!response.ok) {
               throw new Error("설정 파일을 로드할 수 없습니다. 상태 코드: " + response.status)
@@ -183,9 +155,9 @@
   
             // 일반 설정 파일 시도
             log("일반 설정 파일 시도...")
-            const generalSettingsUrl = `https://cdn.jsdelivr.net/gh/minjin-a/cafe24-banner@main/settings.json?_=${timestamp}&nocache=${Math.random()}`
+            const generalSettingsUrl = `https://cdn.jsdelivr.net/gh/minjin-a/cafe24-banner@main/settings.json?_=${timestamp}`
   
-            return fetch(generalSettingsUrl, fetchOptions)
+            return fetch(generalSettingsUrl)
               .then((response) => {
                 if (!response.ok) {
                   throw error // 원래 오류 유지
@@ -209,7 +181,19 @@
                 resolve(settings)
               })
               .catch(() => {
-                reject(error) // 원래 오류 반환
+                // 모든 시도 실패 시 기본 설정 사용
+                log("모든 로드 시도 실패, 기본 설정 사용")
+                const settings = { ...defaultSettings, version: version }
+  
+                // 로컬 스토리지에 저장
+                try {
+                  localStorage.setItem("cafe24_banner_version", version)
+                  localStorage.setItem("cafe24_banner_settings", JSON.stringify(settings))
+                } catch (e) {
+                  log("로컬 스토리지 저장 오류: " + e.message)
+                }
+  
+                resolve(settings)
               })
           })
       })
@@ -371,7 +355,9 @@
             }
           }
   
-          renderErrorBanner("배너를 로드할 수 없습니다: " + error.message)
+          // 저장된 설정도 없으면 기본 설정 사용
+          log("기본 설정으로 배너 렌더링")
+          renderBanner(defaultSettings)
         })
   
       // 2초마다 버전 확인 (테스트용으로 짧게 설정)
@@ -402,6 +388,11 @@
             log("주기적 버전 확인 오류: " + error.message)
           })
       }, 2000) // 2초마다 확인 (테스트용)
+    }
+  
+    // 전역 함수로 노출 - 외부에서 호출 가능하도록
+    window.forceRefreshBanner = (version) => {
+      forceRefresh(version)
     }
   
     // 메인 함수
