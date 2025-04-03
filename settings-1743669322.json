@@ -1,0 +1,13 @@
+{
+    "title": "특별 이벤트 진행 중!",
+    "message": "지adasdasdasdasdasd",
+    "backgroundColor": "#691b1b",
+    "textColor": "#ffffff",
+    "showButton": true,
+    "buttonText": "지금 구매하기",
+    "buttonColor": "#6bb3ff",
+    "buttonLink": "https:\/\/example.com\/event",
+    "active": true,
+    "version": 1743669322,
+    "lastUpdated": "2025-04-03T17:35:22+09:00"
+}
