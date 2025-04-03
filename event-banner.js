@@ -44,7 +44,6 @@
   
         log("버전 확인 중: " + versionUrl)
   
-        // CORS 오류를 방지하기 위해 커스텀 헤더 제거
         fetch(versionUrl)
           .then((response) => {
             if (!response.ok) {
@@ -74,7 +73,6 @@
       log("설정 URL: " + settingsUrl)
   
       return new Promise((resolve, reject) => {
-        // CORS 오류를 방지하기 위해 커스텀 헤더 제거
         fetch(settingsUrl)
           .then((response) => {
             if (!response.ok) {
@@ -89,7 +87,7 @@
             try {
               localStorage.setItem("cafe24_banner_version", version)
               localStorage.setItem("cafe24_banner_settings", JSON.stringify(settings))
-              log("로컬 스토리지에 설정 저장 완료")
+              log("로컬 스토리지에 설정 저장 완료: 버전 " + version)
             } catch (e) {
               log("로컬 스토리지 저장 오류: " + e.message)
             }
@@ -172,6 +170,7 @@
       const container = document.getElementById("cafe24-event-banner")
       if (container) {
         container.innerHTML = ""
+        log("기존 배너 제거 완료")
       }
   
       // 새 설정 로드 및 렌더링
@@ -186,6 +185,20 @@
         })
     }
   
+    // 버전 비교 함수 (숫자로 비교)
+    function isNewerVersion(latestVersion, currentVersion) {
+      // 문자열을 숫자로 변환하여 비교
+      const latest = Number.parseInt(latestVersion, 10)
+      const current = Number.parseInt(currentVersion, 10)
+  
+      // 숫자로 변환 실패 시 다른 버전으로 간주
+      if (isNaN(latest) || isNaN(current)) {
+        return true
+      }
+  
+      return latest > current
+    }
+  
     // 주기적으로 버전 확인 및 업데이트
     function setupVersionCheck() {
       // 저장된 버전 가져오기
@@ -198,41 +211,40 @@
         savedVersion = null
       }
   
-      // 최초 로드 시 버전 확인 및 배너 렌더링
+      // 최초 로드 시 항상 최신 버전 확인 및 적용
       checkLatestVersion()
         .then((latestVersion) => {
           log("최초 로드 - 최신 버전: " + latestVersion + ", 저장된 버전: " + savedVersion)
   
-          // 저장된 버전이 없거나 최신 버전과 다른 경우
-          if (!savedVersion || savedVersion !== latestVersion.toString()) {
-            log("새 버전 발견: " + latestVersion + " (저장된 버전: " + savedVersion + ")")
-            return loadSettings(latestVersion)
-          } else {
-            // 저장된 설정 사용
-            log("저장된 버전 사용: " + savedVersion)
-            try {
-              const savedSettings = JSON.parse(localStorage.getItem("cafe24_banner_settings"))
-              if (savedSettings) {
-                return savedSettings
-              } else {
-                log("저장된 설정이 없습니다. 최신 설정을 로드합니다.")
-                return loadSettings(latestVersion)
-              }
-            } catch (e) {
-              log("저장된 설정 파싱 오류: " + e.message)
-              return loadSettings(latestVersion)
-            }
-          }
+          // 항상 최신 버전의 설정을 로드하고 적용
+          return loadSettings(latestVersion)
         })
         .then((settings) => {
           renderBanner(settings)
+          log("초기 배너 렌더링 완료: 버전 " + settings.version)
         })
         .catch((error) => {
           log("초기 로드 오류: " + error.message)
+  
+          // 오류 발생 시 저장된 설정 사용 시도
+          if (savedVersion) {
+            log("저장된 버전으로 대체 시도: " + savedVersion)
+            try {
+              const savedSettings = JSON.parse(localStorage.getItem("cafe24_banner_settings"))
+              if (savedSettings) {
+                renderBanner(savedSettings)
+                log("저장된 설정으로 배너 렌더링 완료")
+                return
+              }
+            } catch (e) {
+              log("저장된 설정 파싱 오류: " + e.message)
+            }
+          }
+  
           renderErrorBanner("배너를 로드할 수 없습니다: " + error.message)
         })
   
-      // 10초마다 버전 확인 (테스트용으로 짧게 설정, 실제로는 더 길게 설정 가능)
+      // 5초마다 버전 확인 (테스트용으로 짧게 설정)
       setInterval(() => {
         log("주기적 버전 확인 시작")
   
@@ -249,7 +261,7 @@
             log("주기적 확인 - 최신 버전: " + latestVersion + ", 현재 버전: " + currentVersion)
   
             // 새 버전이 있는 경우 강제 업데이트
-            if (!currentVersion || currentVersion !== latestVersion.toString()) {
+            if (!currentVersion || isNewerVersion(latestVersion, currentVersion)) {
               log("새 버전 감지: " + latestVersion + " (현재: " + currentVersion + ") - 강제 새로고침 시작")
               forceRefresh(latestVersion)
             } else {
@@ -259,22 +271,12 @@
           .catch((error) => {
             log("주기적 버전 확인 오류: " + error.message)
           })
-      }, 10000) // 10초마다 확인 (테스트용)
+      }, 5000) // 5초마다 확인 (테스트용)
     }
   
     // 메인 함수
     function init() {
       log("배너 초기화 중...")
-  
-      // 로컬 스토리지 초기화 (테스트용 - 실제 환경에서는 제거)
-      try {
-        localStorage.removeItem("cafe24_banner_version")
-        localStorage.removeItem("cafe24_banner_settings")
-        log("로컬 스토리지 초기화 완료")
-      } catch (e) {
-        log("로컬 스토리지 초기화 오류: " + e.message)
-      }
-  
       setupVersionCheck()
     }
   
